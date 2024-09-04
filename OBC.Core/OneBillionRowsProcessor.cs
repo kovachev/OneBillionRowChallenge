@@ -12,7 +12,10 @@ public class OneBillionRowsProcessor
 
     private readonly object _lock = new();
     
-    public async Task<string> ProcessFileAsync(string inputFilePath, string? outputFilePath = null, int? processorCount = null)
+    public async Task<IEnumerable<Measurement>> ProcessFileAsync(
+        string inputFilePath, 
+        string? outputFilePath = null,
+        int? processorCount = null)
     {
         var timestamp = Stopwatch.GetTimestamp();
         
@@ -69,18 +72,19 @@ public class OneBillionRowsProcessor
             mappedFile.Dispose();
         }
 
-        var output = $"{{{string.Join(", ", _measurements.OrderBy(x => x.Key, StringComparer.Ordinal).Select(x => x.Value))}}}";
+        var result = _measurements.OrderBy(x => x.Key, StringComparer.Ordinal)
+                                  .Select(x => x.Value);
 
         if (!string.IsNullOrWhiteSpace(outputFilePath))
         {
-            await File.WriteAllTextAsync(outputFilePath, output);
+            await File.WriteAllTextAsync(outputFilePath, result.ToOutputString());
         }
         
         var elapsed = Stopwatch.GetElapsedTime(timestamp);
 
         Console.WriteLine($"Elapsed: {elapsed}");
         
-        return output;
+        return result;
     }
 
     private static void PrintFileChunks(List<FileChunk> fileChunks)
@@ -149,7 +153,7 @@ public class OneBillionRowsProcessor
             }
 
             var station = parts[0];
-            var value = float.Parse(parts[1]);
+            var value = double.Parse(parts[1]);
 
             if (!_measurements.TryGetValue(station, out var measurement))
             {

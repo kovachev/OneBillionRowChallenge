@@ -1,25 +1,25 @@
 ﻿namespace OBC.Core;
 
-internal record Measurement
+public record Measurement
 {
-    private string Name { get; init; }
+    public string Name { get; init; }
 
-    private float MinValue { get; set; } = float.MaxValue;
+    public double MinValue { get; set; } = double.MaxValue;
 
-    private float MaxValue { get; set; } = float.MinValue;
+    public double MaxValue { get; set; } = double.MinValue;
 
-    private float Average => Sum / Count;
+    public double Average => Sum / Count;
 
-    private float Sum { get; set; }
+    public double Sum { get; set; }
 
-    private int Count { get; set; }
+    public int Count { get; set; }
 
     public Measurement(string name)
     {
         Name = name;
     }
         
-    public void AddValue(float value)
+    public void AddValue(double value)
     {
         MinValue = Math.Min(MinValue, value);
         MaxValue = Math.Max(MaxValue, value);
@@ -27,5 +27,5 @@ internal record Measurement
         Count++;
     }
     
-    public override string ToString() => $"{Name}={MinValue:#0.0}/{Average:#0.0}/{MaxValue:#0.0}";
+    public override string ToString() => $"{Name}={MinValue:F1}/{Average:F1}/{MaxValue:F1}";
 }

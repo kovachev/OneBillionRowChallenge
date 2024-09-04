@@ -27,9 +27,11 @@ public class OneBillionRowsProcessorTests
     public async Task TestWithKnownData(string inputFilePath, string expectedOutputFilePath)
     {
         var processor = new OneBillionRowsProcessor();
-        var actualOutput = await processor.ProcessFileAsync(inputFilePath);
-        //var actualOutput = await processor.ProcessFileAsync(inputFilePath, processorCount: 1);
+        var measurements = await processor.ProcessFileAsync(inputFilePath);
+        //var measurements = await processor.ProcessFileAsync(inputFilePath, processorCount: 1);
 
+        var actualOutput = measurements.ToOutputString();
+        
         var expectedOutput = await File.ReadAllTextAsync(expectedOutputFilePath);
 
         var hasFailed = false;
@@ -44,6 +46,65 @@ public class OneBillionRowsProcessorTests
         }
         
         Assert.IsFalse(hasFailed);
+    }
+    
+    [TestMethod]
+    [DataRow("C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-100_000.txt")]
+    public async Task TestForDebugging(string inputFilePath)
+    {
+        var processor = new OneBillionRowsProcessor();
+        var measurementsSingleThread = await processor.ProcessFileAsync(inputFilePath, processorCount: 1);
+        var measurements = await processor.ProcessFileAsync(inputFilePath);
+
+        if (measurements.Count() != measurementsSingleThread.Count())
+        {
+            Console.WriteLine("The counts are different.");
+            return;
+        }
+        
+        const double tolerance = 0.0001;
+        
+        for (var i = 0; i < measurements.Count(); i++)
+        {
+            var m1 = measurements.ElementAt(i);
+            var m2 = measurementsSingleThread.ElementAt(i);
+            
+            if (m1.Name != m2.Name)
+            {
+                Console.WriteLine($"The names are different at index {i}.");
+                return;
+            }
+            
+            if (Math.Abs(m1.MinValue - m2.MinValue) > tolerance)
+            {
+                Console.WriteLine($"The min values are different at index {i}.");
+                return;
+            }
+            
+            if (Math.Abs(m1.Average - m2.Average) > tolerance)
+            {
+                Console.WriteLine($"The average values are different at index {i}.");
+                return;
+            }
+            
+            if (Math.Abs(m1.MaxValue - m2.MaxValue) > tolerance)
+            {
+                Console.WriteLine($"The max values are different at index {i}.");
+                return;
+            }
+            
+            if (Math.Abs(m1.Sum - m2.Sum) > tolerance)
+            {
+                Console.WriteLine($"The sum values are different at index {i}.");
+                return;
+            }
+            
+            if (m1.Count != m2.Count)
+            {
+                Console.WriteLine($"The counts are different at index {i}.");
+                return;
+            }
+        }
     }
     
     private static void FindDifferences(string expectedOutput, string actualOutput)
