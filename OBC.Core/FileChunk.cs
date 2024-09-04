@@ -1,4 +1,4 @@
-namespace OBC.ConsoleApp;
+namespace OBC.Core;
 
 internal record FileChunk
 {

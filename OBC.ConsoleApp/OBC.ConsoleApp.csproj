@@ -11,4 +11,8 @@
       <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.22272.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\OBC.Core\OBC.Core.csproj" />
+    </ItemGroup>
+
 </Project>

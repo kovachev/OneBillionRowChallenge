@@ -3,7 +3,7 @@
   "profiles": {
     "OBC.ConsoleApp": {
       "commandName": "Project",
-      "commandLineArgs": "--input-file-path 'C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-1_000_000_000.txt'",
+      "commandLineArgs": "--input-file-path \"C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-1_000_000_000.txt\" --output-file-path \"C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\output.txt\"",
       "environmentVariables": {
       }
     }
