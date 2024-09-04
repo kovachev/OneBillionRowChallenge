@@ -1,5 +1,4 @@
-Data/*.txt
-Data/*.out
+Data/*
 bin
 obj
 .idea
