@@ -2,13 +2,13 @@
 
 internal record Measurement
 {
-    public string Name { get; init; }
-    
-    public float MinValue { get; private set; } = float.MaxValue;
+    private string Name { get; init; }
 
-    public float MaxValue { get; private set; } = float.MinValue;
+    private float MinValue { get; set; } = float.MaxValue;
 
-    public float Average => Sum / Count;
+    private float MaxValue { get; set; } = float.MinValue;
+
+    private float Average => Sum / Count;
 
     private float Sum { get; set; }
 
@@ -27,5 +27,5 @@ internal record Measurement
         Count++;
     }
     
-    public override string ToString() => $"{Name}={MinValue:#.0}/{Average:#.0}/{MaxValue:#.0}";
+    public override string ToString() => $"{Name}={MinValue:#0.0}/{Average:#0.0}/{MaxValue:#0.0}";
 }

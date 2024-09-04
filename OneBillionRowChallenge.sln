@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OBC.ConsoleApp", "OBC.Conso
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OBC.Core", "OBC.Core\OBC.Core.csproj", "{368A03F1-2A69-4E95-8CCB-7E54768D1EEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OBC.Tests", "OBC.Tests\OBC.Tests.csproj", "{73A8925C-1D17-4C77-B21F-F8A4040B21DB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{368A03F1-2A69-4E95-8CCB-7E54768D1EEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{368A03F1-2A69-4E95-8CCB-7E54768D1EEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{368A03F1-2A69-4E95-8CCB-7E54768D1EEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73A8925C-1D17-4C77-B21F-F8A4040B21DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73A8925C-1D17-4C77-B21F-F8A4040B21DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73A8925C-1D17-4C77-B21F-F8A4040B21DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73A8925C-1D17-4C77-B21F-F8A4040B21DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

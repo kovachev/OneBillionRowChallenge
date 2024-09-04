@@ -10,7 +10,7 @@ public class OneBillionRowsProcessor
     
     private readonly ConcurrentDictionary<string, Measurement> _measurements = new();
 
-    public async Task ProcessFileAsync(string inputFilePath, string? outputFilePath)
+    public async Task<string> ProcessFileAsync(string inputFilePath, string? outputFilePath)
     {
         var timestamp = Stopwatch.GetTimestamp();
         
@@ -24,6 +24,15 @@ public class OneBillionRowsProcessor
 
             var chunkSize = fileInfo.Length / processCount;
 
+            if (chunkSize < 128)
+            {
+                processCount = 1;
+                chunkSize = fileInfo.Length;
+            }
+            
+            Console.WriteLine($"Process count: {processCount}");
+            Console.WriteLine($"Chunk size: {chunkSize}");
+            
             var fileChunks = new List<FileChunk>();
 
             for (var i = 0; i < processCount; i++)
@@ -65,6 +74,8 @@ public class OneBillionRowsProcessor
         var elapsed = Stopwatch.GetElapsedTime(timestamp);
 
         Console.WriteLine($"Elapsed: {elapsed}");
+        
+        return output;
     }
 
     private static void AlignFileChunksToNewLine(MemoryMappedFile mappedFile, long fileSize, List<FileChunk> fileChunks)
