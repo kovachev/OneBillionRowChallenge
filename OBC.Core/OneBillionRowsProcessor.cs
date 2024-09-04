@@ -25,7 +25,7 @@ public class OneBillionRowsProcessor
         {
             var fileInfo = new FileInfo(inputFilePath);
 
-            var tasksCount = processorCount ?? (Environment.ProcessorCount / 2);
+            var tasksCount = processorCount ?? Environment.ProcessorCount;
 
             var chunkSize = fileInfo.Length / tasksCount;
 
