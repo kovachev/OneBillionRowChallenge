@@ -5,38 +5,76 @@ namespace OBC.Tests;
 [TestClass]
 public class OneBillionRowsProcessorTests
 {
+    private const string BasePath = @"C:\Stefan\Projects\OneBillionRowChallenge\Data\";
+    private const string BasePathExpectedOutput = BasePath + @"ExpectedOutput\";
+    
     [TestMethod]
-    [DataRow(
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-1.txt",
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\ExpectedOutput\\measurements-1.out")]
-    [DataRow(
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-2.txt",
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\ExpectedOutput\\measurements-2.out")]
-    [DataRow(
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-3.txt",
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\ExpectedOutput\\measurements-3.out")]
-    [DataRow(
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-10.txt",
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\ExpectedOutput\\measurements-10.out")]
-    [DataRow(
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-100_000.txt",
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\ExpectedOutput\\measurements-100_000.out")]
-    [DataRow(
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-1_000_000.txt",
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\ExpectedOutput\\measurements-1_000_000.out")]
-    [DataRow(
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-10_000_000.txt",
-        "C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\ExpectedOutput\\measurements-10_000_000.out")]
-    public async Task TestWithKnownData(string inputFilePath, string expectedOutputFilePath)
+    public async Task TestWithKnownData_1()
     {
+        await TestWithKnownData("measurements-1");
+    }
+
+    [TestMethod]
+    public async Task TestWithKnownData_2()
+    {
+        await TestWithKnownData("measurements-2");
+    }
+
+    [TestMethod]
+    public async Task TestWithKnownData_3()
+    {
+        await TestWithKnownData("measurements-3");
+    }
+
+    [TestMethod]
+    public async Task TestWithKnownData_10()
+    {
+        await TestWithKnownData("measurements-10");
+    }
+
+    [TestMethod]
+    public async Task TestWithKnownData_100K()
+    {
+        await TestWithKnownData("measurements-100_000");
+    }
+
+    [TestMethod]
+    public async Task TestWithKnownData_1M()
+    {
+        await TestWithKnownData("measurements-1_000_000");
+    }
+
+    [TestMethod]
+    public async Task TestWithKnownData_10M()
+    {
+        await TestWithKnownData("measurements-10_000_000");
+    }
+    
+    [TestMethod]
+    public async Task TestWithKnownData_1BRC()
+    {
+        await TestWithKnownData("measurements-1_000_000_000");
+    }
+    
+    private static async Task TestWithKnownData(
+        string inputFileName,
+        int? processorCount = null)
+    {
+        var inputFilePath = BasePath + inputFileName + ".txt";
+        var expectedOutputFilePath = BasePathExpectedOutput + inputFileName + ".out";
+
         var measurements = await OneBillionRowsProcessor.Create()
-                                                        .ProcessFileAsync(inputFilePath);
+                                                        .ProcessFileAsync(
+                                                            inputFilePath,
+                                                            processorCount: processorCount
+                                                        );
 
         var actualOutput = measurements.ToOutputString();
 
         var expectedOutput = await File.ReadAllTextAsync(expectedOutputFilePath);
 
         var hasFailed = false;
+        
         try
         {
             Assert.AreEqual(expectedOutput.Trim(), actualOutput);
@@ -54,72 +92,6 @@ public class OneBillionRowsProcessorTests
         }
 
         Assert.IsFalse(hasFailed);
-    }
-
-    [TestMethod]
-    [DataRow("C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-3.txt")]
-    public async Task TestForDebugging(string inputFilePath)
-    {
-        var measurementsSingleThread = await OneBillionRowsProcessor.Create()
-                                                                    .ProcessFileAsync(inputFilePath, processorCount: 1);
-
-        var measurements = await OneBillionRowsProcessor.Create()
-                                                        .ProcessFileAsync(inputFilePath);
-
-        if (measurements.Count() != measurementsSingleThread.Count())
-        {
-            Console.WriteLine("The counts are different.");
-            return;
-        }
-
-        foreach (var measurement in measurementsSingleThread)
-        {
-            Console.WriteLine(measurement.DebugString());
-        }
-
-        const double tolerance = 0.0001;
-
-        for (var i = 0; i < measurements.Count(); i++)
-        {
-            var m1 = measurements.ElementAt(i);
-            var m2 = measurementsSingleThread.ElementAt(i);
-
-            if (m1.Name != m2.Name)
-            {
-                Console.WriteLine($"The names are different at index {i}.");
-                return;
-            }
-
-            if (Math.Abs(m1.MinValue - m2.MinValue) > tolerance)
-            {
-                Console.WriteLine($"The min values are different at index {i}.");
-                return;
-            }
-
-            if (Math.Abs(m1.Average - m2.Average) > tolerance)
-            {
-                Console.WriteLine($"The average values are different at index {i}.");
-                return;
-            }
-
-            if (Math.Abs(m1.MaxValue - m2.MaxValue) > tolerance)
-            {
-                Console.WriteLine($"The max values are different at index {i}.");
-                return;
-            }
-
-            if (Math.Abs(m1.Sum - m2.Sum) > tolerance)
-            {
-                Console.WriteLine($"The sum values are different at index {i}.");
-                return;
-            }
-
-            if (m1.Count != m2.Count)
-            {
-                Console.WriteLine($"The counts are different at index {i}.");
-                return;
-            }
-        }
     }
 
     private static void FindDifferences(string expectedOutput, string actualOutput)

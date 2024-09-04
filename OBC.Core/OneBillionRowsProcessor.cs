@@ -155,19 +155,18 @@ public class OneBillionRowsProcessor
             }
 
             var station = parts[0];
-            var value = double.Parse(parts[1]);
-            
-            lock (_lock)
+            var value = float.Parse(parts[1]);
+
+            if (!_measurements.TryGetValue(station, out var measurement))
             {
-                if (!_measurements.TryGetValue(station, out var measurement))
+                lock (_lock)
                 {
                     measurement = new Measurement(station);
                     _measurements.TryAdd(station, measurement);
                 }
-
-
-                measurement.AddValue(value);
             }
+
+            measurement.AddValue(value);
         }
     }
 }

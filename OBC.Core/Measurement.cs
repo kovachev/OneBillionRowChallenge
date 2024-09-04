@@ -4,32 +4,34 @@ namespace OBC.Core;
 
 public record Measurement
 {
-    public string Name { get; init; }
+    private string Name { get; }
 
-    public double MinValue { get; set; } = double.MaxValue;
+    private float MinValue { get; set; } = float.MaxValue;
 
-    public double MaxValue { get; set; } = double.MinValue;
+    private float MaxValue { get; set; } = float.MinValue;
 
-    public double Average => Sum / Count;
+    private float Average => Sum / Count;
 
-    public double Sum { get; set; }
+    private float Sum { get; set; }
 
-    public int Count { get; set; }
-
-    public List<double> Values { get; } = new();
+    private int Count { get; set; }
+    
+    private object Lock { get; } = new();
     
     public Measurement(string name)
     {
         Name = name;
     }
         
-    public void AddValue(double value)
+    public void AddValue(float value)
     {
-        MinValue = Math.Min(MinValue, value);
-        MaxValue = Math.Max(MaxValue, value);
-        Values.Add(value);
-        Sum += value;
-        Count++;
+        lock (Lock)
+        {
+            MinValue = Math.Min(MinValue, value);
+            MaxValue = Math.Max(MaxValue, value);
+            Sum += value;
+            Count++;
+        }
     }
     
     public override string ToString() => $"{Name}={MinValue:F1}/{AverageToString()}/{MaxValue:F1}";
@@ -44,8 +46,7 @@ public record Measurement
         sb.AppendLine($"      Sum: {Sum:F10}");
         sb.AppendLine($"    Count: {Count:F0}");
         sb.AppendLine($"  Average: {Average:F10}");
-        sb.AppendLine($"   Values: {string.Join(", ", Values.Select(x => x.ToString("F1")))}");
-
+        
         return sb.ToString();
     }
 

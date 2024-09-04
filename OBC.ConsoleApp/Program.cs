@@ -18,6 +18,6 @@ internal sealed class Program
         }
         
         var processor = new OneBillionRowsProcessor();
-        await processor.ProcessFileAsync(inputFilePath, outputFilePath, processorCount: 1);
+        await processor.ProcessFileAsync(inputFilePath, outputFilePath);
     }
 }
