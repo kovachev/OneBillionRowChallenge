@@ -10,7 +10,9 @@ public class OneBillionRowsProcessor
     
     private readonly ConcurrentDictionary<string, Measurement> _measurements = new();
 
-    public async Task<string> ProcessFileAsync(string inputFilePath, string? outputFilePath)
+    private readonly object _lock = new();
+    
+    public async Task<string> ProcessFileAsync(string inputFilePath, string? outputFilePath = null, int? processorCount = null)
     {
         var timestamp = Stopwatch.GetTimestamp();
         
@@ -20,28 +22,33 @@ public class OneBillionRowsProcessor
         {
             var fileInfo = new FileInfo(inputFilePath);
 
-            var processCount = Environment.ProcessorCount / 2;
+            var tasksCount = processorCount ?? (Environment.ProcessorCount / 2);
 
-            var chunkSize = fileInfo.Length / processCount;
+            var chunkSize = fileInfo.Length / tasksCount;
 
             if (chunkSize < 128)
             {
-                processCount = 1;
+                tasksCount = 1;
                 chunkSize = fileInfo.Length;
             }
             
-            Console.WriteLine($"Process count: {processCount}");
+            Console.WriteLine($"Tasks count: {tasksCount}");
             Console.WriteLine($"Chunk size: {chunkSize}");
+            Console.WriteLine($"File size: {fileInfo.Length}");
             
             var fileChunks = new List<FileChunk>();
 
-            for (var i = 0; i < processCount; i++)
+            for (var i = 0; i < tasksCount; i++)
             {
-                var size = i == processCount - 1 ? fileInfo.Length - i * chunkSize : chunkSize;
-                fileChunks.Add(new FileChunk(i * chunkSize, size));
+                var start = i * chunkSize;
+                //if (i > 0) start++;
+                var size = i == tasksCount - 1 ? fileInfo.Length - start : chunkSize;
+                fileChunks.Add(new FileChunk(start, size));
             }
             
             AlignFileChunksToNewLine(mappedFile, fileInfo.Length, fileChunks);
+            
+            PrintFileChunks(fileChunks);
             
             Console.WriteLine($"Elapsed after AlignFileChunksToNewLine(): {Stopwatch.GetElapsedTime(timestamp)}");
             
@@ -63,8 +70,6 @@ public class OneBillionRowsProcessor
         }
 
         var output = $"{{{string.Join(", ", _measurements.OrderBy(x => x.Key, StringComparer.Ordinal).Select(x => x.Value))}}}";
-        
-        Console.WriteLine(output);
 
         if (!string.IsNullOrWhiteSpace(outputFilePath))
         {
@@ -76,6 +81,15 @@ public class OneBillionRowsProcessor
         Console.WriteLine($"Elapsed: {elapsed}");
         
         return output;
+    }
+
+    private static void PrintFileChunks(List<FileChunk> fileChunks)
+    {
+        for (var index = 0; index < fileChunks.Count; index++)
+        {
+            var fileChunk = fileChunks[index];
+            Console.WriteLine($"Chunk {index}: {fileChunk.Start} - {fileChunk.End} ({fileChunk.Length})");
+        }
     }
 
     private static void AlignFileChunksToNewLine(MemoryMappedFile mappedFile, long fileSize, List<FileChunk> fileChunks)
@@ -102,10 +116,9 @@ public class OneBillionRowsProcessor
             var offset = 0L;
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                var b = reader.ReadByte();
                 offset++;
 
-                if (b == LineEnd)
+                if (reader.ReadByte() == LineEnd)
                 {
                     break;
                 }
@@ -127,8 +140,7 @@ public class OneBillionRowsProcessor
         using var stream = mappedFile.CreateViewStream(fileChunk.Start, fileChunk.Length, MemoryMappedFileAccess.Read);
         using var reader = new StreamReader(stream);
 
-        var counter = 0;
-        while (reader.ReadLine() is { } line)
+        while (reader.ReadLine() is {} line)
         {
             var parts = line.Split(';');
             if (parts.Length != 2)
@@ -141,17 +153,17 @@ public class OneBillionRowsProcessor
 
             if (!_measurements.TryGetValue(station, out var measurement))
             {
-                measurement = new Measurement(station);
-                _measurements.TryAdd(station, measurement);
+                lock (_lock)
+                {
+                    if (!_measurements.TryGetValue(station, out measurement))
+                    {
+                        measurement = new Measurement(station);
+                        _measurements.TryAdd(station, measurement);
+                    }
+                }
             }
-
+            
             measurement.AddValue(value);
-
-            counter++;
-            if (counter % 100_000_000 == 0)
-            {
-                Console.WriteLine($"[{Thread.CurrentThread.ManagedThreadId,2}: {counter:##,###}]");
-            }
         }
     }
 }
