@@ -1,0 +1,11 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "OBC.ConsoleApp": {
+      "commandName": "Project",
+      "commandLineArgs": "--input-file-path 'C:\\Stefan\\Projects\\OneBillionRowChallenge\\Data\\measurements-1_000_000_000.txt'",
+      "environmentVariables": {
+      }
+    }
+  }
+}
