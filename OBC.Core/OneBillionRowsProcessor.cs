@@ -10,8 +10,6 @@ public class OneBillionRowsProcessor
 
     private readonly ConcurrentDictionary<string, Measurement> _measurements = new();
 
-    private readonly object _lock = new();
-
     public static OneBillionRowsProcessor Create() => new();
 
     public async Task<IEnumerable<Measurement>> ProcessFileAsync(
@@ -157,16 +155,8 @@ public class OneBillionRowsProcessor
             var station = parts[0];
             var value = float.Parse(parts[1]);
 
-            if (!_measurements.TryGetValue(station, out var measurement))
-            {
-                lock (_lock)
-                {
-                    measurement = new Measurement(station);
-                    _measurements.TryAdd(station, measurement);
-                }
-            }
-
-            measurement.AddValue(value);
+            _measurements.GetOrAdd(station, new Measurement(station))
+                         .AddValue(value);
         }
     }
 }
