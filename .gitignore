@@ -1,3 +1,5 @@
+Data/*.txt
+Data/*.out
 bin
 obj
 .idea
