@@ -7,18 +7,20 @@ namespace OBC.Core;
 public class OneBillionRowsProcessor
 {
     private const byte LineEnd = (byte)'\n';
-    
+
     private readonly ConcurrentDictionary<string, Measurement> _measurements = new();
 
     private readonly object _lock = new();
-    
+
+    public static OneBillionRowsProcessor Create() => new();
+
     public async Task<IEnumerable<Measurement>> ProcessFileAsync(
-        string inputFilePath, 
+        string inputFilePath,
         string? outputFilePath = null,
         int? processorCount = null)
     {
         var timestamp = Stopwatch.GetTimestamp();
-        
+
         var mappedFile = MemoryMappedFile.CreateFromFile(inputFilePath, FileMode.Open, null, 0, MemoryMappedFileAccess.Read);
 
         try
@@ -34,11 +36,11 @@ public class OneBillionRowsProcessor
                 tasksCount = 1;
                 chunkSize = fileInfo.Length;
             }
-            
+
             Console.WriteLine($"Tasks count: {tasksCount}");
             Console.WriteLine($"Chunk size: {chunkSize}");
             Console.WriteLine($"File size: {fileInfo.Length}");
-            
+
             var fileChunks = new List<FileChunk>();
 
             for (var i = 0; i < tasksCount; i++)
@@ -48,20 +50,20 @@ public class OneBillionRowsProcessor
                 var size = i == tasksCount - 1 ? fileInfo.Length - start : chunkSize;
                 fileChunks.Add(new FileChunk(start, size));
             }
-            
+
             AlignFileChunksToNewLine(mappedFile, fileInfo.Length, fileChunks);
-            
+
             PrintFileChunks(fileChunks);
-            
+
             Console.WriteLine($"Elapsed after AlignFileChunksToNewLine(): {Stopwatch.GetElapsedTime(timestamp)}");
-            
+
             var tasks = new List<Task>();
 
             foreach (var fileChunk in fileChunks)
             {
                 var sameMappedFile = mappedFile;
                 var task = Task.Run(() => ProcessChunk(sameMappedFile, fileChunk));
-                
+
                 tasks.Add(task);
             }
 
@@ -79,11 +81,11 @@ public class OneBillionRowsProcessor
         {
             await File.WriteAllTextAsync(outputFilePath, result.ToOutputString());
         }
-        
+
         var elapsed = Stopwatch.GetElapsedTime(timestamp);
 
         Console.WriteLine($"Elapsed: {elapsed}");
-        
+
         return result;
     }
 
@@ -99,19 +101,19 @@ public class OneBillionRowsProcessor
     private static void AlignFileChunksToNewLine(MemoryMappedFile mappedFile, long fileSize, List<FileChunk> fileChunks)
     {
         const int searchLength = 128;
-        
+
         if (fileChunks.Count <= 1)
         {
             return;
         }
-        
+
         for (var i = 1; i < fileChunks.Count; i++)
         {
             var fileChunk = fileChunks[i];
-            
+
             var start = fileChunk.Start;
             var end = fileChunk.Start + searchLength;
-            
+
             var size = end > fileSize ? fileSize - start : searchLength;
 
             using var stream = mappedFile.CreateViewStream(start, size, MemoryMappedFileAccess.Read);
@@ -132,19 +134,19 @@ public class OneBillionRowsProcessor
             {
                 fileChunk.Start += offset;
                 fileChunk.Length -= offset;
-                
+
                 // Adjust previous chunk
                 fileChunks[i - 1].Length += offset;
             }
         }
     }
-    
+
     private void ProcessChunk(MemoryMappedFile mappedFile, FileChunk fileChunk)
     {
         using var stream = mappedFile.CreateViewStream(fileChunk.Start, fileChunk.Length, MemoryMappedFileAccess.Read);
         using var reader = new StreamReader(stream);
 
-        while (reader.ReadLine() is {} line)
+        while (reader.ReadLine() is { } line)
         {
             var parts = line.Split(';');
             if (parts.Length != 2)
@@ -154,20 +156,18 @@ public class OneBillionRowsProcessor
 
             var station = parts[0];
             var value = double.Parse(parts[1]);
-
-            if (!_measurements.TryGetValue(station, out var measurement))
-            {
-                lock (_lock)
-                {
-                    if (!_measurements.TryGetValue(station, out measurement))
-                    {
-                        measurement = new Measurement(station);
-                        _measurements.TryAdd(station, measurement);
-                    }
-                }
-            }
             
-            measurement.AddValue(value);
+            lock (_lock)
+            {
+                if (!_measurements.TryGetValue(station, out var measurement))
+                {
+                    measurement = new Measurement(station);
+                    _measurements.TryAdd(station, measurement);
+                }
+
+
+                measurement.AddValue(value);
+            }
         }
     }
 }
